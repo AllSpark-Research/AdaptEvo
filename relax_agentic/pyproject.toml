@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0", "versioneer[toml]==0.29"]
+build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 119
+indent-width = 4
+
+[tool.ruff.lint]
+ignore = ["C408", "C420", "C901", "E501", "E731", "E741", "W605"]
+select = ["C", "E", "F", "I", "W"]
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+known-first-party = ["relax"]
+known-third-party = [
+    "accelerate",
+    "datasets",
+    "gradio",
+    "numpy",
+    "peft",
+    "ray",
+    "sglang",
+    "torch",
+    "transformers",
+    "trl"
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
+[tool.versioneer]
+VCS = "git"
+style = "pep440"
+versionfile_source = "relax/_version.py"
+versionfile_build = "relax/_version.py"
+tag_prefix = "v"
+parentdir_prefix = "v"

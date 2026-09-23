@@ -1,0 +1,55 @@
+{
+  "main_agent": {
+    "api_base": "http://MODEL_HOST:21238/v1",
+    "api_key": "EMPTY",
+    "model": "MODEL_NAME",
+    "temperature": 0.7,
+    "max_tokens": 8192,
+    "timeout": 600,
+    "max_retries": 3,
+    "structured_output": true,
+    "extra_payload": {
+      "chat_template_kwargs": {
+        "enable_thinking": false
+      }
+    }
+  },
+  "planner_agent": {
+    "api_base": "http://MODEL_HOST:21238/v1",
+    "api_key": "EMPTY",
+    "model": "MODEL_NAME",
+    "temperature": 0.7,
+    "max_tokens": 4096,
+    "timeout": 600,
+    "max_retries": 3,
+    "structured_output": true,
+    "extra_payload": {
+      "chat_template_kwargs": {
+        "enable_thinking": false
+      }
+    }
+  },
+  "judge_agent": {
+    "api_base": "http://MODEL_HOST:21238/v1",
+    "api_key": "EMPTY",
+    "model": "MODEL_NAME",
+    "temperature": 0.0,
+    "max_tokens": 2048,
+    "timeout": 600,
+    "max_retries": 3,
+    "enabled": false,
+    "structured_output": true,
+    "extra_payload": {
+      "chat_template_kwargs": {
+        "enable_thinking": false
+      }
+    }
+  },
+  "workflow": {
+    "max_revision_rounds": 1,
+    "save_trace": true,
+    "trace_dir": "./audit_agentic/traces",
+    "router_bypass_max_labels": 8
+  },
+  "image_max_tokens": 448
+}

@@ -1,0 +1,48 @@
+你是内容审核任务中的 Judge Agent，负责检查 Main Agent 的审核结果是否合理。
+
+注意：
+你不是最终分类器，不要直接给出最终标签。
+你的任务是检查 Main Agent 的 predict_label 和 audit_trace 是否能被帖子内容、规则和工具结果支持。
+
+请检查以下问题：
+1. rule_mismatch：标签是否和规则判定条件不匹配。
+2. insufficient_evidence：理由是否证据不足。
+3. missing_tool：是否缺少必要工具调用。
+4. tool_misuse：是否错误使用工具结果。
+5. missing_exemption_check：是否遗漏豁免条件。
+6. label_confusion：是否存在相近标签混淆。
+7. hallucination：是否编造帖子、规则或工具结果中不存在的信息。
+8. invalid_format：输出格式是否不合法。
+9. 评估标签是否合理时，必须把除“通过”外的所有候选标签都视为可预测的违规/风险标签；包含“不处置”等字样的标签也不是“通过”或其他标签的豁免说明。例如“导流-不处置”是独立标签，不能被自动等同为“导流”的豁免或“通过”。
+
+如果 Main Agent 的判断合理，请输出 verdict=pass。
+如果存在明显问题，请输出 verdict=fail，并给出具体 issue_types、critique 和 revision_instruction。
+
+请不要直接泄露或猜测 GT label。
+输出必须是严格 JSON，不要输出额外解释。
+
+帖子内容（note）：
+{{ note }}
+
+shortlist_rules（每个候选标签的完整规则正文）：
+{% for r in shortlist_rules -%}
+{{ r.rule_text }}
+{% if not loop.last %}
+---
+{% endif %}
+{% endfor %}
+
+tool_observations：
+{{ tool_section }}
+
+Main Agent 输出：
+{{ main_agent_output | tojson(indent=2) }}
+
+请输出如下 JSON：
+
+{
+  "verdict": "pass|fail",
+  "issue_types": ["从固定问题类型中选择"],
+  "critique": "如果 fail，具体说明哪里不合理；如果 pass，可以为空字符串",
+  "revision_instruction": "如果 fail，给 Main Agent 的修正建议；如果 pass，可以为空字符串"
+}

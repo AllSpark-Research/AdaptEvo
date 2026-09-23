@@ -1,0 +1,75 @@
+Planner Agent 已根据 你召回的标签做了候选整理和工具规划。注意：Planner 不是最终裁判，它只是提示哪些标签可疑、哪些标签需要工具；最终判断必须由你根据帖子内容、规则正文和工具结果独立完成。
+
+#Planner 提示：可疑的标签
+{% if possible_labels %}
+{% for fl in possible_labels %}
+{{ loop.index }}. {{ fl.get("label", "") if fl is mapping else (fl.label | default("")) }}
+   理由：{{ fl.get("reason", "") if fl is mapping else (fl.reason | default("")) }}
+{% endfor %}
+{% else %}（无）
+{% endif %}
+
+#Planner 提示：需要工具确认的标签
+{% if tool_required_labels %}
+{% for fl in tool_required_labels %}
+{{ loop.index }}. {{ fl.get("label", "") if fl is mapping else (fl.label | default("")) }}
+   理由：{{ fl.get("reason", "") if fl is mapping else (fl.reason | default("")) }}
+{% endfor %}
+{% else %}（无）
+{% endif %}
+
+#队列审核须知（队列级别，适用于本队列所有候选标签）
+{% set has_queue_notice = namespace(value=false) -%}
+{% for r in remaining_rules -%}
+{% if r.label == "__queue_notice__" -%}
+{% set has_queue_notice.value = true -%}
+{{ r.rule_text }}
+{% endif -%}
+{% endfor -%}
+{% if not has_queue_notice.value %}（无）
+{% endif %}
+
+#候选标签规则正文
+{% set has_label_rule = namespace(value=false) -%}
+{% for r in remaining_rules -%}
+{% if r.label != "__queue_notice__" -%}
+{% set has_label_rule.value = true -%}
+标签：{{ r.label }}
+规则正文：
+{{ r.rule_text }}
+{% if not loop.last %}
+---
+{% endif %}
+{% endif -%}
+{% endfor -%}
+{% if not has_label_rule.value %}（无）
+{% endif %}
+
+#工具调用结果
+{% if tool_section %}
+{{ tool_section }}
+{% else %}（Planner 未调用任何工具，或工具调用为空。）
+{% endif %}
+
+{% if judge_feedback %}
+#Judge Agent 反馈（你的上一次判断未通过校验，请重点修正）
+{{ judge_feedback | tojson(indent=2) }}
+{% endif %}
+
+---
+
+请基于你第一轮看到的帖子内容、上述规则正文和工具结果做最终判断。
+
+判断原则（严格遵守）：
+1. 目标是最终结果正确，输出最精确标签, (Planner的分析只作为参考，你需要结合所有信息自己判断)。
+2. 如果帖子命中某个非“通过”标签的规则，且没有明确豁免，必须输出该完整标签名。
+3. 只有当所有非“通过”候选标签都不成立，或明确命中豁免，才输出“通过”。
+4. 如果工具结果与规则冲突，以规则定义和工具中的客观事实为准，不要编造工具没有提供的信息。
+5. predict_label 必须从第一轮 candidate_labels 中选择，只输出一个最精确标签。
+
+简要分析后输出严格 JSON：
+
+{
+  "predict_label": ["选择你认为最适合的标签，必须来自 candidate_labels"],
+  "audit_trace": "说明命中的规则、关键证据、工具结果或豁免原因"
+}

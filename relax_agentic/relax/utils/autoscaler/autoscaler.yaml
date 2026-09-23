@@ -1,0 +1,52 @@
+# Relax Autoscaler Configuration
+# This file defines the default configuration for the autoscaler service.
+# Usage: python relax/entrypoints/train.py --autoscaler-config relax/utils/autoscaler/autoscaler.yaml
+
+# Whether autoscaler is enabled (set to true when using this config file)
+enabled: true
+
+# Engine bounds
+min_engines: 1
+max_engines: 32
+
+# Cooldown periods (seconds)
+scale_out_cooldown_secs: 60.0
+scale_in_cooldown_secs: 300.0
+
+# Timing intervals (seconds)
+metrics_interval_secs: 10.0
+evaluation_interval_secs: 30.0
+condition_window_secs: 60.0
+
+# Service endpoint (will be overridden by rollout_service_url from args)
+rollout_service_url: "http://localhost:8000/rollout"
+
+# Scale-out policy: triggers when ANY condition is met
+scale_out_policy:
+  # Token usage ratio above which to consider scaling out
+  token_usage_threshold: 0.85
+  # Queue depth per engine that triggers scale-out
+  queue_depth_per_engine: 10
+  # P95 queue time in seconds that triggers scale-out
+  queue_time_p95_threshold: 5.0
+  # P95 time-to-first-token in seconds that triggers scale-out
+  ttft_p95_threshold: 10.0
+  # How long conditions must persist before triggering (seconds)
+  condition_duration_secs: 30.0
+  # Maximum number of engines to add in a single scale-out
+  max_delta: 4
+
+# Scale-in policy: triggers when ALL conditions are met
+scale_in_policy:
+  # Token usage ratio below which to consider scaling in
+  token_usage_threshold: 0.3
+  # Queue depth below which to consider scaling in
+  queue_depth_threshold: 0
+  # Maximum throughput variance for stability
+  throughput_variance_threshold: 0.1
+  # How long ALL conditions must persist before triggering (seconds)
+  condition_duration_secs: 120.0
+  # Maximum number of engines to remove in a single scale-in (conservative)
+  max_delta: 1
+  # Maximum projected usage after scale-in to allow removal
+  projected_usage_max: 0.5

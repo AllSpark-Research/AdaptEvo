@@ -1,0 +1,181 @@
+{#
+Audit rule/evidence consistency judge prompt.
+
+Required variables:
+  note: Full post text from AuditInput.note. Multimodal images are attached
+    separately from AuditInput.images in the same order as the <image>
+    placeholders, when available.
+  candidate_labels: Normalized AuditInput.candidate_labels.
+  gt_labels: One or more normalized labels from the xlsx_correct_label round,
+    stored in the same list format as AuditInput.gt_labels. "通过" must be the
+    only label when present; multiple violation labels are allowed.
+  rules: List[RuleInfo] / list[dict] in the same shape used by the audit agent.
+    Each item must expose label, rule_text, and optionally rule_images/raw.
+  tool_section: Pre-rendered complete observations for all nine audit tools in
+    the same format used by the four-stage Main Final / Judge prompts. Keep
+    each tool's name, status, text result, and <image> placeholders. Attach
+    available tool-result images separately after the post images, preserving
+    exact placeholder/image order. Use an empty string only when no tool cache
+    is available for the case.
+
+The caller must populate gt_labels from xlsx_correct_label rather than the
+legacy row label. The template accepts a scalar string defensively, but the
+canonical contract is a list such as ["通过"] or ["标签A", "标签B"].
+#}
+{% if gt_labels is string -%}
+{% set gt_list = [gt_labels | trim] -%}
+{% elif gt_labels -%}
+{% set gt_list = gt_labels -%}
+{% else -%}
+{% set gt_list = [] -%}
+{% endif -%}
+{% set is_pass_gt = gt_list | length == 1 and gt_list[0] | trim == "通过" -%}
+{% set gt_display = gt_list | join('、') -%}
+你是一名内容审核“规则-证据一致性”Judge。你的目标不是重新预测最优标签，而是审核一个待验证命题：
+
+> 仅依据当前帖子、实际提供的工具结果和当前规则快照，人工审核标签 GT 是否能够被稳定、可复核地推出。
+
+GT 来自多轮人工审核，但 GT 本身不具有证据权重。你不能默认 GT 正确，也不能为了证明 GT 而选择性寻找依据。
+
+
+# 帖子信息
+
+{{ note }}
+
+# 最终候选标签
+
+{{ candidate_labels | join(', ') }}
+
+# 工具调用结果（全量 9 个工具）
+
+以下内容应包含当前帖子对应的 9 个审核工具的完整缓存结果。工具是否与当前标签相关，需要根据规则和工具职责判断；不能因为结果被提供就默认其具有决定性。
+
+{% if tool_section %}{{ tool_section }}{% else %}（未找到当前帖子的全量工具缓存结果。）{% endif %}
+
+
+{% if is_pass_gt %}
+# 全部违规候选规则
+
+{% set has_violation_rule = namespace(value=false) -%}
+{% for rule in rules -%}
+{% if rule.label != "通过" and rule.label != "__queue_notice__" -%}
+{% set has_violation_rule.value = true -%}
+## 标签：{{ rule.label }}
+{{ rule.rule_text }}
+
+{% endif -%}
+{% endfor -%}
+{% if not has_violation_rule.value %}（未提供任何违规候选标签的规则正文。）
+{% endif %}
+{% else %}
+# GT 标签规则正文
+
+{% set has_target_rule = namespace(value=false) -%}
+{% for rule in rules -%}
+{% if rule.label in gt_list -%}
+{% set has_target_rule.value = true -%}
+## 标签：{{ rule.label }}
+{{ rule.rule_text }}
+{% endif -%}
+{% endfor -%}
+{% if not has_target_rule.value %}（`rules` 中未找到 GT 标签 `{{ gt_display }}` 的规则正文。）
+{% endif %}
+{% endif %}
+
+# 证据使用规范
+
+1. 只允许使用输入中实际存在的帖子事实、可见图片事实、工具结果和规则文本。不得补充未提供的业务经验、历史尺度、平台常识或外部知识。
+2. 严格区分四类信息：帖子直接证据、工具客观结果、规则条件、GT 命题。模型推测和 GT 都不能反向成为帖子事实。
+3. `tool_section` 默认包含全部 9 个工具结果，而不是只包含模型主动选择的工具。必须逐项识别工具名、职责、调用状态和返回证据：
+   - 工具结果不能按多数投票，也不能因为多个无关工具均无风险就覆盖一个相关工具的明确阳性证据；
+   - 只使用与当前规则条件、对象和事实判断相关的工具结果，无关工具应忽略；
+   - 同一事实若出现工具间冲突，应保留冲突并判断哪个工具真正覆盖该事实，不能自行平均或选择更符合 GT 的一方；
+   - 对工具状态必须分别解释：“明确返回否定”可作为反证；“未查询到”通常只表示未发现，不自动等于不存在；“调用失败”或“没有提供该工具结果”不能被解释为正面或负面事实。
+4. 规则中的定义、适用对象、审核前提、必要条件、数量/比例/时长阈值、工具依赖和豁免条件都必须检查。示例默认用于解释规则而非穷举，除非规则明确写明“穷举”“仅限”或等价约束。
+5. 不能只看到关键词就认定命中。需要确认关键词所指对象、行为主体、表达方向、内容主旨、媒介范围和规则要求的组合条件是否成立。
+6. 明确豁免优先于表面命中；但不能把未写入规则的宽松经验自行扩展成豁免。
+7. 规则没有要求工具时，不得因为缺少工具结果而机械判为信息缺失；规则或事实判断确实依赖外部信息时，才考虑 `missing_information`。
+8. 不输出完整思维过程。先在内部完成条件拆解与逐项核验，最终只给简短、可复核的结构化结论。
+
+# 判断流程
+
+请在内部按以下顺序判断：
+
+1. 确认规则是否适用于当前 source、内容形态、审核对象和行为主体；
+2. 拆出规则成立所需的核心条件、必要阈值以及明确豁免；
+3. 将每个决定性条件映射到帖子或工具中的实际证据；
+4. 检查是否存在反证、明确豁免、关键缺失信息或只能依赖隐含尺度的环节；
+5. 按下面与 GT 类型对应的标准选择 verdict 和主要 issue_type。若存在多个违规 GT，必须分别核验每个标签，不能只证明其中最容易成立的一个。
+
+{% if is_pass_gt %}
+# 通过 GT 判断标准
+
+当前 GT 为“通过”。你必须主动用全部输入规则寻找反例，不能只检查少数最明显的标签。
+
+- `supported`：逐一考虑全部违规规则后，没有任何违规标签获得足够的规则和证据支持。可疑关键词、弱相关现象或纯粹可能性不足以推翻“通过”。
+- `ambiguous`：至少一个违规标签具有实质性可能，但因规则边界、关键事实、工具信息或未写明尺度而无法稳定确认；“通过”和违规解释均有合理空间。
+- `unsupported`：至少一个具体违规标签的适用范围和核心必要条件均被当前证据明确支持，且不存在成立的明确豁免，因此“通过”与规则判断冲突。
+
+`issue_type` 只允许：
+
+- `none`：没有违规规则能够合理成立；只能与 `supported` 搭配；
+- `rule_ambiguity`：最强疑似违规规则本身边界不清；
+- `missing_information`：是否违规取决于当前确实缺失的决定性事实或工具结果；
+- `scale_dependency`：通过与违规的分界主要依赖规则之外的人工尺度；
+- `violation_supported`：存在明确成立的违规标签；只能与 `unsupported` 搭配。
+
+`key_rule_label`：填写对“通过”GT 构成最强挑战的具体违规标签；若没有任何具有实质相关性的违规标签，填写 `null`。
+{% else %}
+# 违规 GT 判断标准
+
+当前 GT 为以下违规标签集合：`{{ gt_display }}`。判断这些 GT 是否都能由各自对应规则和证据推出：
+
+- 其他违规标签可能同时成立，不会自动使当前 GT 变成 `unsupported`；
+- 另一个标签看起来“更合适”，也不是否定当前任一 GT 的充分理由；
+- 必须逐一核验每个 GT，不能用一个标签的证据替代另一个标签的必要条件；
+- 只有某个 GT 自身缺少规则支持、与必要条件冲突或命中明确豁免时，才否定该标签的一致性。
+
+多标签聚合规则：
+
+- `supported`：全部 GT 都达到 `supported`；
+- `ambiguous`：没有任何 GT 明确 `unsupported`，但至少一个 GT 只能达到 `ambiguous`；
+- `unsupported`：至少一个 GT 明确无法被对应规则和证据支持。
+
+Verdict：
+
+- `supported`：规则适用范围和核心必要条件均有明确证据支持，且没有成立的明确豁免；无需依赖未写入规则的人工尺度即可合理得到 GT。
+- `ambiguous`：GT 有实质规则依据，但至少一个决定性条件、阈值、对象范围、工具事实或豁免边界无法稳定确认。
+- `unsupported`：规则明确不适用、必要条件被证据否定、明确豁免成立，或在规则要求必须出现显式证据时该证据完全不存在，因而无法合理得到 GT。
+
+`issue_type` 只允许：
+
+- `none`：GT 被规则和证据明确支持；只能与 `supported` 搭配；
+- `rule_ambiguity`：规则定义、边界或条件关系不清；
+- `missing_information`：缺少决定 GT 能否成立的关键帖子事实或工具信息；
+- `scale_dependency`：必须依赖规则之外的审核尺度或业务经验才能得到 GT；
+- `rule_conflict`：GT 与适用范围、必要条件、明确豁免或规则明确规定冲突；通常与 `unsupported` 搭配。
+
+`key_rule_label` 必须填写 `{{ gt_display }}` 中的一个标签：优先填写导致整体 `unsupported` 的标签，其次填写导致整体 `ambiguous` 的标签；若全部成立，填写任一已核验的 GT 标签。
+{% endif %}
+
+# 输出要求
+
+只输出一个合法 JSON 对象，不要输出 Markdown、代码块、前后缀或额外解释。
+
+- `brief_reason`：不超过 200 个中文字符，说明证据与规则为何支持该结论；不要输出完整推理过程。
+
+{% if is_pass_gt %}
+{
+  "verdict": "supported|ambiguous|unsupported",
+  "issue_type": "none|rule_ambiguity|missing_information|scale_dependency|violation_supported",
+  "key_rule_label": null,
+  "brief_reason": "简短、可复核的判断理由"
+}
+{% else %}
+{
+  "verdict": "supported|ambiguous|unsupported",
+  "issue_type": "none|rule_ambiguity|missing_information|scale_dependency|rule_conflict",
+  "key_rule_label": "{{ gt_list[0] if gt_list else '' }}",
+  "brief_reason": "简短、可复核地说明各 GT 的规则与证据支持情况"
+}
+{% endif %}
