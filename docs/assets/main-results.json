@@ -1,0 +1,133 @@
+{
+  "title": "AdaptEvo main results",
+  "source": {
+    "paper_title": "AdaptEvo: Adaptive Agent Learning with Evolving Supervision",
+    "table": 1,
+    "paper_file": "AdaptEvo-arxiv.pdf",
+    "verified_against": "AdaptEvo-arxiv-upload-20261008.zip",
+    "table_source_sha256": "730d1c1ddf38530b1db45689ddf07c3f8b26fd2a8361b4224af5ce59269f12db"
+  },
+  "units": "accuracy_percent",
+  "higher_is_better": true,
+  "shared_backbone": "Qwen3.6-35B-A3B",
+  "checkpoint_note": "Trained rows use their reported 60-step checkpoints; AdaptEvo includes initial and continued training. The knowledge-only row reuses the CA-GRPO checkpoint.",
+  "rows": [
+    {
+      "method": "Qwen3.5-4B",
+      "knowledge": "None",
+      "group": "reference_model",
+      "in_period_ela": 46.8,
+      "in_period_bda": 60.8,
+      "out_of_period_ela": 50.8,
+      "out_of_period_bda": 64.5
+    },
+    {
+      "method": "Qwen3.5-9B",
+      "knowledge": "None",
+      "group": "reference_model",
+      "in_period_ela": 46.2,
+      "in_period_bda": 63.2,
+      "out_of_period_ela": 50.4,
+      "out_of_period_bda": 65.2
+    },
+    {
+      "method": "Qwen3.5-27B",
+      "knowledge": "None",
+      "group": "reference_model",
+      "in_period_ela": 55.1,
+      "in_period_bda": 68.5,
+      "out_of_period_ela": 53.8,
+      "out_of_period_bda": 66.0
+    },
+    {
+      "method": "Qwen3.8-Flash-Next",
+      "knowledge": "None",
+      "group": "reference_model",
+      "in_period_ela": 54.9,
+      "in_period_bda": 69.1,
+      "out_of_period_ela": 54.4,
+      "out_of_period_bda": 67.6
+    },
+    {
+      "method": "GLM5.3-Flash",
+      "knowledge": "None",
+      "group": "reference_model",
+      "in_period_ela": 56.3,
+      "in_period_bda": 69.6,
+      "out_of_period_ela": 55.6,
+      "out_of_period_bda": 67.5
+    },
+    {
+      "method": "Kimi-K3",
+      "knowledge": "None",
+      "group": "reference_model",
+      "in_period_ela": 56.2,
+      "in_period_bda": 68.9,
+      "out_of_period_ela": 56.7,
+      "out_of_period_bda": 68.8
+    },
+    {
+      "method": "Gemini3.8-Flash",
+      "knowledge": "None",
+      "group": "reference_model",
+      "in_period_ela": 61.2,
+      "in_period_bda": 71.9,
+      "out_of_period_ela": 60.4,
+      "out_of_period_bda": 69.5
+    },
+    {
+      "method": "Qwen3.6-35B-A3B (base)",
+      "knowledge": "None",
+      "group": "shared_backbone",
+      "in_period_ela": 53.9,
+      "in_period_bda": 66.1,
+      "out_of_period_ela": 53.3,
+      "out_of_period_bda": 65.9
+    },
+    {
+      "method": "GRPO",
+      "knowledge": "None",
+      "group": "shared_backbone",
+      "in_period_ela": 54.4,
+      "in_period_bda": 68.5,
+      "out_of_period_ela": 51.9,
+      "out_of_period_bda": 65.2
+    },
+    {
+      "method": "GRPO (High-Conf.)",
+      "knowledge": "None",
+      "group": "shared_backbone",
+      "in_period_ela": 53.3,
+      "in_period_bda": 68.8,
+      "out_of_period_ela": 52.9,
+      "out_of_period_bda": 65.5
+    },
+    {
+      "method": "CA-GRPO",
+      "knowledge": "None",
+      "group": "shared_backbone",
+      "in_period_ela": 55.4,
+      "in_period_bda": 68.1,
+      "out_of_period_ela": 55.2,
+      "out_of_period_bda": 67.3
+    },
+    {
+      "method": "CA-GRPO + knowledge",
+      "knowledge": "Evolved",
+      "group": "shared_backbone",
+      "in_period_ela": 59.1,
+      "in_period_bda": 71.3,
+      "out_of_period_ela": 58.6,
+      "out_of_period_bda": 69.7
+    },
+    {
+      "method": "AdaptEvo",
+      "knowledge": "Evolved",
+      "group": "shared_backbone",
+      "in_period_ela": 61.9,
+      "in_period_bda": 72.2,
+      "out_of_period_ela": 59.5,
+      "out_of_period_bda": 69.5
+    }
+  ]
+}

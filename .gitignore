@@ -45,3 +45,8 @@ wandb/
 ray_results/
 .idea/
 .vscode/
+
+# Public README figures; other media remain excluded.
+!/docs/assets/main-results.png
+!/docs/assets/framework.png
+!/docs/assets/banner.png
