@@ -219,14 +219,16 @@ See [public-release boundaries and verification](docs/PUBLIC_RELEASE.md).
 If you use this code or build on the framework, please cite the paper:
 
 ```bibtex
-@misc{wan2026adaptevo,
-  title        = {AdaptEvo: Adaptive Agent Learning with Evolving Supervision},
-  author       = {Shijun Wan and Jiancong Xie and Hang Xu and Jin Duan and
-                  Qixiong Wang and Xi Xiang and Maofei Que and Yahui Liu and
-                  Zhongyu Wei and Mu Chuan},
-  year         = {2026},
-  howpublished = {Technical report},
-  url          = {https://github.com/AllSpark-Research/AdaptEvo}
+@misc{wan2026adaptevoadaptiveagentlearning,
+  title         = {AdaptEvo: Adaptive Agent Learning with Evolving Supervision},
+  author        = {Shijun Wan and Jiancong Xie and Hang Xu and Jin Duan and
+                   Qixiong Wang and Xi Xiang and Maofei Que and Yahui Liu and
+                   Zhongyu Wei and Mu Chuan},
+  year          = {2026},
+  eprint        = {2610.11354},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  url           = {https://arxiv.org/abs/2610.11354},
 }
 ```
 
