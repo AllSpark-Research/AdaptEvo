@@ -103,6 +103,23 @@ The chart above compares six configurations sharing the
 reference model. Full cross-model results are available in the
 [paper](AdaptEvo-arxiv.pdf).
 
+| Model / Method | Knowledge | In-Period ELA | In-Period BDA | Out-of-Period ELA | Out-of-Period BDA |
+|---|---|---:|---:|---:|---:|
+| Qwen3.5-4B | None | 46.8 | 60.8 | 50.8 | 64.5 |
+| Qwen3.5-9B | None | 46.2 | 63.2 | 50.4 | 65.2 |
+| Qwen3.5-27B | None | 55.1 | 68.5 | 53.8 | 66.0 |
+| Qwen3.8-Flash-Next | None | 54.9 | 69.1 | 54.4 | 67.6 |
+| GLM5.3-Flash | None | 56.3 | 69.6 | 55.6 | 67.5 |
+| Kimi-K3 | None | 56.2 | 68.9 | 56.7 | 68.8 |
+| Gemini3.8-Flash | None | 61.2 | 71.9 | **60.4** | 69.5 |
+| **Shared backbone: Qwen3.6-35B-A3B** | | | | | |
+| Qwen3.6-35B-A3B (base) | None | 53.9 | 66.1 | 53.3 | 65.9 |
+| GRPO | None | 54.4 | 68.5 | 51.9 | 65.2 |
+| GRPO (High-Conf.) | None | 53.3 | 68.8 | 52.9 | 65.5 |
+| CA-GRPO | None | 55.4 | 68.1 | 55.2 | 67.3 |
+| CA-GRPO + knowledge | Evolved | 59.1 | 71.3 | 58.6 | **69.7** |
+| **AdaptEvo** | Evolved | **61.9** | **72.2** | 59.5 | 69.5 |
+
 GRPO (High-Conf.) trains only on cases with unanimous human labels and a QC
 label-rationale pair assessed as supported by Kimi-K3. **CA-GRPO + knowledge**
 adds evolved knowledge at inference to the same CA-GRPO checkpoint.
