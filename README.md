@@ -11,7 +11,7 @@
   <a href="docs/TRAINING.md">Training Guide</a>
 </p>
 
-<p align="center"><b>Fudan University · Sun Yat-sen University · Xiaohongshu</b></p>
+<p align="center"><b>AllSpark & AgenticAudit Team, Xiaohongshu</b></p>
 
 **AdaptEvo brings policy learning, decision guidance, and process evaluation
 into one Training–Evolution framework.** It learns under imperfect supervision
